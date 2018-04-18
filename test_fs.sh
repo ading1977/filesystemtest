@@ -40,7 +40,7 @@ mkdir -p $mount
 echo Mount $mount >> $log 2>&1
 if [ "$fs" = "nfs" ]; then
   sudo umount -f $mount >> $log 2>&1
-  sudo mount -o vers=4 $ip:/var/nfsshare $mount >> $log 2>&1
+  sudo mount -o vers=3 $ip:/var/nfsshare $mount >> $log 2>&1
   if [ $? -ne 0 ]; then
     echo Failed to mount $mount >> $log 2>&1
     echo ======================================= >> $log 2>&1
