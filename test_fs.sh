@@ -1,12 +1,27 @@
 #!/bin/bash
-if [ "$#" -ne 1 ]; then
-  echo Usage: $0  nfs \| gluster
+
+USAGE="Usage: $0  <nfs \| glustera> <server_ip>"
+
+if [ "$#" -ne 2 ]; then
+  echo $USAGE
   exit 1
 fi
 
 fs=$1
 if [ "$fs" != "nfs" -a "$fs" != "gluster" ]; then
-  echo Usage: $0  nfs \| gluster
+  echo $USAGE
+  exit 1
+fi
+
+ip=$2
+if [[ $ip =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  ping -q -c2 $ip
+  if [ $? -ne 0 ]; then
+    echo Failed to ping $ip
+    exit 1
+  fi
+else
+  echo Invalid IP address: $ip
   exit 1
 fi
 
@@ -25,7 +40,7 @@ mkdir -p $mount
 echo Mount $mount >> $log 2>&1
 if [ "$fs" = "nfs" ]; then
   sudo umount -f $mount >> $log 2>&1
-  sudo mount -o vers=4 kube08:/var/nfsshare $mount >> $log 2>&1
+  sudo mount -o vers=4 $ip:/var/nfsshare $mount >> $log 2>&1
   if [ $? -ne 0 ]; then
     echo Failed to mount $mount >> $log 2>&1
     echo ======================================= >> $log 2>&1
