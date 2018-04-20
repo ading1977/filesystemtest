@@ -46,6 +46,14 @@ if [ "$fs" = "nfs" ]; then
     echo ======================================= >> $log 2>&1
     exit 1
   fi
+elif [ "$fs" = "gluster" ]; then
+  sudo umount -f $mount >> $log 2>&1
+  sudo mount -o vers=4.1 $ip:/gv-dist-0 $mount >> $log 2>&1
+  if [ $? -ne 0 ]; then
+    echo Failed to mount $mount >> $log 2>&1
+    echo ======================================= >> $log 2>&1
+    exit 1
+  fi
 fi
 
 source=$home/gcc-4.9.2
