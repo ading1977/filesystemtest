@@ -71,10 +71,17 @@ echo Configure ... >> $log 2>&1
 echo Compile ... >> $log 2>&1
 (time make -j8) >> $log 2>&1
 if [ $? -eq 0 ]; then
-  echo Delete $dest ... >> $log 2>&1
-  cd ..
-  (time rm -rf $dest) >> $log 2>&1
+  echo Retry compiling after 10 seconds ... >> $log 2>&1
+  sleep 10
+  (time make -j8) >> $log 2>&1
+  if [ $? -eq 0 ]; then
+    echo Compile failed ... >> $log 2>&1
+    exit 1
+  fi
 fi
+echo Delete $dest ... >> $log 2>&1
+cd ..
+(time rm -rf $dest) >> $log 2>&1
 date >> $log 2>&1
 done
 echo ======================================= >> $log 2>&1
