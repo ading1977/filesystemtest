@@ -70,11 +70,11 @@ echo Configure ... >> $log 2>&1
 (time ./configure --disable-multilib --enable-languages=c,c++) >> $log 2>&1
 echo Compile ... >> $log 2>&1
 (time make -j8) >> $log 2>&1
-if [ $? -eq 0 ]; then
+if [ $? -ne 0 ]; then
   echo Retry compiling after 10 seconds ... >> $log 2>&1
   sleep 10
   (time make -j8) >> $log 2>&1
-  if [ $? -eq 0 ]; then
+  if [ $? -ne 0 ]; then
     echo Compile failed ... >> $log 2>&1
     exit 1
   fi
