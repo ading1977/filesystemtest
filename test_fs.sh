@@ -36,7 +36,7 @@ log="$home/$fs/$host.$date.log"
 echo ======================================= >> $log 2>&1
 
 mount=/mnt/$fs
-mkdir -p $mount
+sudo mkdir -p $mount
 echo Mount $mount >> $log 2>&1
 if [ "$fs" = "nfs" ]; then
   sudo umount -f $mount >> $log 2>&1
