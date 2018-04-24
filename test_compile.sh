@@ -82,5 +82,5 @@ if [ $? -ne 0 ]; then
 fi
 echo ======================================= >> $log 2>&1
 
-cp $log $mount/output
+cp $log $mount/output/test.compile.$host.$date.log
 

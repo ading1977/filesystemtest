@@ -71,5 +71,5 @@ echo Copy to $dest >> $log 2>&1
 (time cp -rf $source $dest) >> $log 2>&1
 echo ======================================= >> $log 2>&1
 
-cp $log $mount/output
+cp $log $mount/output/test.copy.$host.$date.log
 
