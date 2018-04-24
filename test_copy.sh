@@ -69,18 +69,7 @@ dest=$mount/$file
 date >> $log 2>&1
 echo Copy to $dest >> $log 2>&1
 (time cp -rf $source $dest) >> $log 2>&1
-cd $dest
-echo Configure ... >> $log 2>&1
-(time ./configure --disable-multilib --enable-languages=c,c++) >> $log 2>&1
-echo Compile ... >> $log 2>&1
-(time make -j8) >> $log 2>&1
-if [ $? -ne 0 ]; then
-  echo Retry compiling after 10 seconds ... >> $log 2>&1
-  sleep 10
-  (time make -j8) >> $log 2>&1
-  if [ $? -ne 0 ]; then
-    echo Compile failed ... >> $log 2>&1
-  fi
-fi
-date >> $log 2>&1
 echo ======================================= >> $log 2>&1
+
+cp $log $mount/output
+

@@ -1,10 +1,8 @@
 #!/bin/bash
 
-# Do copy, compile and delete in a while loop
-
 USAGE="Usage: $0  <nfs \| glustera> <server_ip>"
 
-if [ "$#" -ne 2 ]; then
+if [ "$#" -le 2 ]; then
   echo $USAGE
   exit 1
 fi
@@ -59,15 +57,17 @@ elif [ "$fs" = "gluster" ]; then
 fi
 
 source=$home/gcc-4.9.2
-file=gcc-4.9.2.$host.$date
+ami_launch_index=`curl http://169.254.169.254/latest/meta-data/ami-launch-index`
+if [ "$#" -eq 3 ]; then
+  group="$3"
+  file=gcc.$group.$ami_launch_index
+else
+  file=gcc.$ami_launch_index
+fi
 dest=$mount/$file
 
-while true
-do
-date >> $log 2>&1
-echo Copy to $dest >> $log 2>&1
-(time cp -rf $source $dest) >> $log 2>&1
 cd $dest
+date >> $log 2>&1
 echo Configure ... >> $log 2>&1
 (time ./configure --disable-multilib --enable-languages=c,c++) >> $log 2>&1
 echo Compile ... >> $log 2>&1
@@ -78,12 +78,9 @@ if [ $? -ne 0 ]; then
   (time make -j8) >> $log 2>&1
   if [ $? -ne 0 ]; then
     echo Compile failed ... >> $log 2>&1
-    exit 1
   fi
 fi
-echo Delete $dest ... >> $log 2>&1
-cd ..
-(time rm -rf $dest) >> $log 2>&1
-date >> $log 2>&1
-done
 echo ======================================= >> $log 2>&1
+
+cp $log $mount/output
+
