@@ -2,7 +2,7 @@
 
 USAGE="Usage: $0  <nfs \| glustera> <server_ip>"
 
-if [ "$#" -ne 2 ]; then
+if [ "$#" -le 2 ]; then
   echo $USAGE
   exit 1
 fi
@@ -58,7 +58,12 @@ fi
 
 source=$home/gcc-4.9.2
 ami_launch_index=`curl http://169.254.169.254/latest/meta-data/ami-launch-index`
-file=gcc.$ami_launch_index
+if [ "$#" -eq 3 ]; then
+  group="$3"
+  file=gcc.$group.$ami_launch_index
+else
+  file=gcc.$ami_launch_index
+fi
 dest=$mount/$file
 
 date >> $log 2>&1
