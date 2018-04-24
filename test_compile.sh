@@ -2,7 +2,7 @@
 
 USAGE="Usage: $0  <nfs \| glustera> <server_ip>"
 
-if [ "$#" -le 2 ]; then
+if [ "$#" -lt 2 ]; then
   echo $USAGE
   exit 1
 fi
