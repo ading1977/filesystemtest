@@ -78,9 +78,6 @@ if [ $? -ne 0 ]; then
     echo Compile failed ... >> $log 2>&1
   fi
 fi
-echo Delete $dest ... >> $log 2>&1
-cd ..
-(time rm -rf $dest) >> $log 2>&1
 date >> $log 2>&1
 echo ======================================= >> $log 2>&1
 
