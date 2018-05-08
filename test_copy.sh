@@ -1,6 +1,6 @@
 #!/bin/bash
 
-USAGE="Usage: $0  <nfs \| glustera> <server_ip>"
+USAGE="Usage: $0  <nfs \| gluster \| lustre> <server_ip>"
 
 if [ "$#" -lt 2 ]; then
   echo $USAGE
@@ -8,7 +8,7 @@ if [ "$#" -lt 2 ]; then
 fi
 
 fs=$1
-if [ "$fs" != "nfs" -a "$fs" != "gluster" ]; then
+if [ "$fs" != "nfs" -a "$fs" != "gluster" -a "$fs" != "lustre" ]; then
   echo $USAGE
   exit 1
 fi
@@ -38,8 +38,8 @@ echo ======================================= >> $log 2>&1
 mount=/mnt/$fs
 sudo mkdir -p $mount
 echo Mount $mount >> $log 2>&1
+sudo umount -f $mount >> $log 2>&1
 if [ "$fs" = "nfs" ]; then
-  sudo umount -f $mount >> $log 2>&1
   sudo mount -o vers=3 $ip:/var/nfsshare $mount >> $log 2>&1
   if [ $? -ne 0 ]; then
     echo Failed to mount $mount >> $log 2>&1
@@ -47,8 +47,18 @@ if [ "$fs" = "nfs" ]; then
     exit 1
   fi
 elif [ "$fs" = "gluster" ]; then
-  sudo umount -f $mount >> $log 2>&1
   sudo mount $ip:/gv-dist-0 $mount >> $log 2>&1
+  if [ $? -ne 0 ]; then
+    echo Failed to mount $mount >> $log 2>&1
+    echo ======================================= >> $log 2>&1
+    exit 1
+  fi
+elif [ "$fs" = "lustre" ]; then
+  sudo modprobe lnet
+  sudo lnetctl lnet configure
+  sudo lnetctl net add --net tcp1 --if ens5
+  sudo modprobe lustre
+  sudo mount -t lustre $ip@tcp1:/lustre $mount >> $log 2>&1
   if [ $? -ne 0 ]; then
     echo Failed to mount $mount >> $log 2>&1
     echo ======================================= >> $log 2>&1
