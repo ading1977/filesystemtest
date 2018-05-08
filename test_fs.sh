@@ -1,29 +1,30 @@
 #!/bin/bash
 
-# Do copy, compile and delete in a while loop
-
-USAGE="Usage: $0  <nfs \| glustera> <server_ip>"
-
-if [ "$#" -ne 2 ]; then
-  echo $USAGE
+fs=${FILESYSTEM}
+if [ "$fs" != "nfs" -a "$fs" != "gluster" -a "$fs" != "lustre" ]; then
+  echo You must set FILESYSTEM environment variable to one of the followings: nfs, gluster or lustre
   exit 1
 fi
 
-fs=$1
-if [ "$fs" != "nfs" -a "$fs" != "gluster" ]; then
-  echo $USAGE
+ip=${SERVER_IP}
+if [ -z "$ip" ]; then
+  echo You must set SERVER_IP environment variable to specify the IP address of the file server
   exit 1
 fi
-
-ip=$2
 if [[ $ip =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-  ping -q -c2 $ip
+  ping -q -c2 $ip > /dev/null 2>&1
   if [ $? -ne 0 ]; then
     echo Failed to ping $ip
     exit 1
   fi
 else
   echo Invalid IP address: $ip
+  exit 1
+fi
+
+type=${TEST_TYPE}
+if [ "$type" != "copy" -a "$type" != "compile" -a "$type" != "all" ]; then
+  echo You must set TEST_TYPE environment variable to one of the followings: copy, compile or all
   exit 1
 fi
 
@@ -40,8 +41,9 @@ echo ======================================= >> $log 2>&1
 mount=/mnt/$fs
 sudo mkdir -p $mount
 echo Mount $mount >> $log 2>&1
+sudo umount -f $mount >> $log 2>&1
 if [ "$fs" = "nfs" ]; then
-  sudo umount -f $mount >> $log 2>&1
+  echo sudo mount -o vers=3 $ip:/var/nfsshare $mount
   sudo mount -o vers=3 $ip:/var/nfsshare $mount >> $log 2>&1
   if [ $? -ne 0 ]; then
     echo Failed to mount $mount >> $log 2>&1
@@ -49,8 +51,24 @@ if [ "$fs" = "nfs" ]; then
     exit 1
   fi
 elif [ "$fs" = "gluster" ]; then
-  sudo umount -f $mount >> $log 2>&1
+  sudo mount $ip:/gv-dist-0 $mount 
   sudo mount $ip:/gv-dist-0 $mount >> $log 2>&1
+  if [ $? -ne 0 ]; then
+    echo Failed to mount $mount >> $log 2>&1
+    echo ======================================= >> $log 2>&1
+    exit 1
+  fi
+elif [ "$fs" = "lustre" ]; then
+  echo sudo modprobe lnet >> $log 2>&1
+  sudo modprobe lnet >> $log 2>&1
+  echo sudo lnetctl lnet configure >> $log 2>&1
+  sudo lnetctl lnet configure >> $log 2>&1
+  echo sudo lnetctl net add --net tcp1 --if ens5 >> $log 2>&1
+  sudo lnetctl net add --net tcp1 --if ens5 >> $log 2>&1
+  echo sudo modprobe lustre >> $log 2>&1
+  sudo modprobe lustre >> $log 2>&1
+  echo sudo mount -t lustre $ip@tcp1:/lustre $mount >> $log 2>&1
+  sudo mount -t lustre $ip@tcp1:/lustre $mount >> $log 2>&1
   if [ $? -ne 0 ]; then
     echo Failed to mount $mount >> $log 2>&1
     echo ======================================= >> $log 2>&1
@@ -59,31 +77,39 @@ elif [ "$fs" = "gluster" ]; then
 fi
 
 source=$home/gcc-4.9.2
-file=gcc-4.9.2.$host.$date
+ami_launch_index=`curl http://169.254.169.254/latest/meta-data/ami-launch-index`
+group=${TEST_GROUP}
+if [ -n "$group" ]; then
+  file=gcc.$group.$ami_launch_index
+else
+  file=gcc.$ami_launch_index
+fi
 dest=$mount/$file
 
-while true
-do
-date >> $log 2>&1
-echo Copy to $dest >> $log 2>&1
-(time cp -rf $source $dest) >> $log 2>&1
-cd $dest
-echo Configure ... >> $log 2>&1
-(time ./configure --disable-multilib --enable-languages=c,c++) >> $log 2>&1
-echo Compile ... >> $log 2>&1
-(time make -j8) >> $log 2>&1
-if [ $? -ne 0 ]; then
-  echo Retry compiling after 10 seconds ... >> $log 2>&1
-  sleep 10
+if [ "$type" = "copy" -o "$type" = "all" ]; then
+  date >> $log 2>&1
+  echo Copy to $dest >> $log 2>&1
+  (time cp -rf $source $dest) >> $log 2>&1
+  date >> $log 2>&1
+fi
+
+if [ "$type" != "copy" ]; then
+  # Need to compile
+  cd $dest
+  echo Configure ... >> $log 2>&1
+  (time ./configure --disable-multilib --enable-languages=c,c++) >> $log 2>&1
+  echo Compile ... >> $log 2>&1
   (time make -j8) >> $log 2>&1
   if [ $? -ne 0 ]; then
-    echo Compile failed ... >> $log 2>&1
-    exit 1
+    echo Retry compiling after 10 seconds ... >> $log 2>&1
+    sleep 10
+    (time make -j8) >> $log 2>&1
+    if [ $? -ne 0 ]; then
+      echo Compile failed ... >> $log 2>&1
+    fi
   fi
 fi
-echo Delete $dest ... >> $log 2>&1
-cd ..
-(time rm -rf $dest) >> $log 2>&1
-date >> $log 2>&1
-done
+
 echo ======================================= >> $log 2>&1
+cp $log $mount/output/test.$type.$host.$date.log
+
