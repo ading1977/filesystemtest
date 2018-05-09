@@ -31,6 +31,7 @@ fi
 export TZ="America/Toronto"
 
 home=/home/centos
+sudo rm -rf $home/$fs
 mkdir -p $home/$fs
 date=`date +%s`
 host=`hostname --short`
