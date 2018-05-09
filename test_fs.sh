@@ -71,11 +71,11 @@ elif [ "$fs" = "lustre" ]; then
   echo sudo mount -t lustre -o localflock $ip@tcp1:/lustre $mount >> $log 2>&1
   sudo mount -t lustre $ip@tcp1:/lustre $mount >> $log 2>&1
   echo sudo lctl set_param osc./*.checksums=0 >> $log 2>&1
-  sudo lctl set_param osc./*.checksums=0 >> log 2>&1
+  sudo lctl set_param osc./*.checksums=0 >> $log 2>&1
   echo sudo lctl set_param osc./*.max_dirty_mb=128 >> $log 2>&1
-  sudo lctl set_param osc./*.max_dirty_mb=128 >> log 2>&1
-  echo sudo lctl set_param osc./*.max_rpcs_in_flight=32 >> log 2>&1
-  sudo lctl set_param osc./*.max_rpcs_in_flight=32 >> log 2>&1
+  sudo lctl set_param osc./*.max_dirty_mb=128 >> $log 2>&1
+  echo sudo lctl set_param osc./*.max_rpcs_in_flight=32 >> $log 2>&1
+  sudo lctl set_param osc./*.max_rpcs_in_flight=32 >> $log 2>&1
   if [ $? -ne 0 ]; then
     echo Failed to mount $mount >> $log 2>&1
     echo ======================================= >> $log 2>&1
