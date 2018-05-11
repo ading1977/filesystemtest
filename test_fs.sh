@@ -94,9 +94,9 @@ source=$home/gcc-4.9.2
 ami_launch_index=`curl http://169.254.169.254/latest/meta-data/ami-launch-index`
 group=${TEST_GROUP}
 if [ -n "$group" ]; then
-  file=gcc.$group.$ami_launch_index
+  file=gcc.`hostname`.$group.$ami_launch_index
 else
-  file=gcc.$ami_launch_index
+  file=gcc.`hostname`.$ami_launch_index
 fi
 dest=$mount/$test_dir/$file
 
