@@ -36,6 +36,7 @@ mkdir -p $home/$fs
 date=`date +%s`
 host=`hostname --short`
 log="$home/$fs/$host.$date.log"
+test_dir=test
 
 echo ======================================= >> $log 2>&1
 
@@ -70,17 +71,23 @@ elif [ "$fs" = "lustre" ]; then
   sudo modprobe lustre >> $log 2>&1
   echo sudo mount -t lustre -o localflock $ip@tcp1:/lustre $mount >> $log 2>&1
   sudo mount -t lustre $ip@tcp1:/lustre $mount >> $log 2>&1
+  if [ $? -ne 0 ]; then
+    echo Failed to mount $mount >> $log 2>&1
+    echo ======================================= >> $log 2>&1
+    exit 1
+  fi
+  if [ ! -d "$mount/$test_dir" ]; then
+    echo Directory $mount/$test_dir does not exist. >> $log 2>&1
+    echo ======================================= >> $log 2>&1
+    exit 1
+  fi
+  # Performance tuning parameters
   echo sudo lctl set_param osc./*.checksums=0 >> $log 2>&1
   sudo lctl set_param osc./*.checksums=0 >> $log 2>&1
   echo sudo lctl set_param osc./*.max_dirty_mb=128 >> $log 2>&1
   sudo lctl set_param osc./*.max_dirty_mb=128 >> $log 2>&1
   echo sudo lctl set_param osc./*.max_rpcs_in_flight=32 >> $log 2>&1
   sudo lctl set_param osc./*.max_rpcs_in_flight=32 >> $log 2>&1
-  if [ $? -ne 0 ]; then
-    echo Failed to mount $mount >> $log 2>&1
-    echo ======================================= >> $log 2>&1
-    exit 1
-  fi
 fi
 
 source=$home/gcc-4.9.2
@@ -91,7 +98,7 @@ if [ -n "$group" ]; then
 else
   file=gcc.$ami_launch_index
 fi
-dest=$mount/$file
+dest=$mount/$test_dir/$file
 
 if [ "$type" = "copy" -o "$type" = "all" ]; then
   date >> $log 2>&1
