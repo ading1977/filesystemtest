@@ -23,8 +23,8 @@ else
 fi
 
 type=${TEST_TYPE}
-if [ "$type" != "copy" -a "$type" != "compile" -a "$type" != "all" ]; then
-  echo You must set TEST_TYPE environment variable to one of the followings: copy, compile or all
+if [ "$type" != "copy" -a "$type" != "compile" -a "$type" != "all" -a "$type" != "mount" ]; then
+  echo You must set TEST_TYPE environment variable to one of the followings: copy, compile, mount or all
   exit 1
 fi
 
@@ -90,6 +90,12 @@ elif [ "$fs" = "lustre" ]; then
   sudo lctl set_param osc./*.max_rpcs_in_flight=32 >> $log 2>&1
 fi
 
+if [ "$type" = "mount" ]; then
+  hostname -s >> $mount/hosts
+  exit 0
+fi
+
+source=$home/gcc-4.9.2
 ami_launch_index=`curl http://169.254.169.254/latest/meta-data/ami-launch-index`
 group=${TEST_GROUP}
 if [ -n "$group" ]; then
