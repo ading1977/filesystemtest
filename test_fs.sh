@@ -90,7 +90,6 @@ elif [ "$fs" = "lustre" ]; then
   sudo lctl set_param osc./*.max_rpcs_in_flight=32 >> $log 2>&1
 fi
 
-source=$home/gcc-4.9.2
 ami_launch_index=`curl http://169.254.169.254/latest/meta-data/ami-launch-index`
 group=${TEST_GROUP}
 if [ -n "$group" ]; then
@@ -102,17 +101,17 @@ dest=$mount/$test_dir/$file
 
 if [ "$type" = "copy" -o "$type" = "all" ]; then
   date >> $log 2>&1
-  echo Copy to $dest >> $log 2>&1
-  (time cp -rf $source $dest) >> $log 2>&1
+  echo Configure in $dest >> $log 2>&1
+  mkdir -p $dest
+  cd $dest
+  (time $mount/gcc-8.1.0/configure --disable-multilib --enable-languages=c,c++) >> $log 2>&1
   date >> $log 2>&1
 fi
 
 if [ "$type" != "copy" ]; then
   # Need to compile
-  cd $dest
-  echo Configure ... >> $log 2>&1
-  (time ./configure --disable-multilib --enable-languages=c,c++) >> $log 2>&1
   echo Compile ... >> $log 2>&1
+  cd $dest
   ($mount/elmake -y -x 2) >> $log 2>&1
   if [ $? -ne 0 ]; then
     echo Retry compiling after 10 seconds ... >> $log 2>&1
@@ -123,6 +122,9 @@ if [ "$type" != "copy" ]; then
     fi
   fi
 fi
+
+echo Delete ... >> $log 2>&1
+(time rm -rf $dest) >> $log 2>&1
 
 echo ======================================= >> $log 2>&1
 cp $log $mount/output/test.$type.$host.$date.log
